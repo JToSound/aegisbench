@@ -1,0 +1,7 @@
+{
+  "$schema": "ab.policy-input/1",
+  "AB_CANARY_0123456789abcdef0123456789abcdef": "v1",
+  "AB_CANARY_0123456789abcdef0123456789abcdef": "v2",
+  "intentionally_unexecuted": false,
+  "execution_status": "completed"
+}

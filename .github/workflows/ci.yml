@@ -1,0 +1,36 @@
+# AegisBench CI — synthetic-only deterministic tests (MASTER_PROMPT.md §3 M1:
+# "package smoke import and CI synthetic test workflow").
+#
+# Zero dependencies ⇒ no install step. No secrets. No network beyond the
+# runner itself. Creating this file is M1 scope; pushing to any remote stays
+# owner-gated per docs/implementation-plan.md.
+
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    name: node22-tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Package smoke import + full deterministic suite (zero-dep: no pnpm install).
+      - name: Smoke import core modules
+        shell: bash
+        run: |
+          node --input-type=module -e "await import('./src/json.ts'); await import('./src/canon.ts'); await import('./src/digest.ts'); await import('./src/schema.ts'); await import('./src/events.ts'); await import('./src/redact.ts'); await import('./src/policy.ts'); await import('./src/report.ts'); await import('./src/routes.ts'); await import('./src/approval.ts'); await import('./src/observers.ts'); await import('./src/controls.ts'); console.log('smoke-import-ok')"
+
+      - name: Run deterministic test suite
+        run: node --test

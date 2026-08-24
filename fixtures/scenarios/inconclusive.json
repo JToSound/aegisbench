@@ -1,0 +1,17 @@
+{
+  "$schema": "ab.policy-input/1",
+  "intentionally_unexecuted": false,
+  "execution_status": "completed",
+  "failure_classes": [],
+  "capability_present": true,
+  "violation_detected": false,
+  "evidence_state": "ambiguous",
+  "property_outcomes": [
+    { "property_id": "prop-ambiguous-003", "predicate": "insufficient_evidence" }
+  ],
+  "cleanup_verified": true,
+  "artifacts_reference_closed": true,
+  "observers_healthy": true,
+  "mandatory_controls_passed": true,
+  "unresolved_critical_contradiction": false
+}

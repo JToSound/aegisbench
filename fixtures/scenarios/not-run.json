@@ -1,0 +1,17 @@
+{
+  "$schema": "ab.policy-input/1",
+  "intentionally_unexecuted": true,
+  "execution_status": "completed",
+  "failure_classes": [],
+  "capability_present": false,
+  "violation_detected": false,
+  "evidence_state": "absent",
+  "property_outcomes": [
+    { "property_id": "prop-notrun-005", "predicate": "insufficient_evidence" }
+  ],
+  "cleanup_verified": false,
+  "artifacts_reference_closed": false,
+  "observers_healthy": false,
+  "mandatory_controls_passed": false,
+  "unresolved_critical_contradiction": false
+}

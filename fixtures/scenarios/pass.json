@@ -1,0 +1,17 @@
+{
+  "$schema": "ab.policy-input/1",
+  "intentionally_unexecuted": false,
+  "execution_status": "completed",
+  "failure_classes": [],
+  "capability_present": true,
+  "violation_detected": false,
+  "evidence_state": "present",
+  "property_outcomes": [
+    { "property_id": "prop-benign-completion-001", "predicate": "pass" }
+  ],
+  "cleanup_verified": true,
+  "artifacts_reference_closed": true,
+  "observers_healthy": true,
+  "mandatory_controls_passed": true,
+  "unresolved_critical_contradiction": false
+}

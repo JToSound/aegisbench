@@ -1,0 +1,19 @@
+{
+  "name": "aegisbench",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Evidence-bounded conformance assurance for synthetic agent-host and MCP scenarios (offline core).",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "typescript": "^5"
+  },
+  "packageManager": "pnpm@10.14.0"
+}

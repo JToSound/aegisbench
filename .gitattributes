@@ -1,0 +1,8 @@
+# Byte-determinism: LF everywhere (contract M0 requires byte-stable outputs;
+# mixed CRLF would poison golden fixtures and cross-platform digests).
+* text=auto eol=lf
+*.ts text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
