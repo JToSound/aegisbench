@@ -1099,3 +1099,31 @@ release automation. M1-H remains separately gated.
   normalization on future touch — expected under .gitattributes policy).
 
 Remaining owner-gated: push/remote creation; M1-H host pilot.
+
+---
+
+# Slice 7 — Remote Publish (APPROVED 2026-08-24)
+
+## Outcome log
+
+- Preflight: gh authenticated as JToSound (scopes include repo + workflow);
+  `JToSound/aegisbench` did not exist ("Could not resolve") — safe to create;
+  no local remotes.
+- Created PRIVATE remote https://github.com/JToSound/aegisbench from local
+  main; branch tracking established (`main...origin/main`).
+- Push verified: remote HEAD = `715d9bb6e2d6d274088b9182ec69f6b4cec8541a`
+  (= local main tip at push time).
+- CI first run 32760336478: **success** on BOTH matrix legs
+  (node22-tests ubuntu-latest ✓, node22-tests windows-latest ✓). Only
+  annotations are GitHub's own Node-20-deprecation notices about the
+  actions runners themselves — not project issues.
+- Visibility is PRIVATE by conservative default; flip with
+  `gh repo edit JToSound/aegisbench --visibility public` when the owner
+  chooses.
+- Follow-up commit pushed after CI green: this outcome-log entry.
+
+## Remaining owner-gated work
+
+M1-H host pilot (requires explicit approval of pinned host version, single
+execution mode, three synthetic scenario designs); any future public-flip;
+PyPI/npm publishing does not apply (not a package release).
