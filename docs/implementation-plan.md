@@ -1127,3 +1127,51 @@ Remaining owner-gated: push/remote creation; M1-H host pilot.
 M1-H host pilot (requires explicit approval of pinned host version, single
 execution mode, three synthetic scenario designs); any future public-flip;
 PyPI/npm publishing does not apply (not a package release).
+
+---
+
+# Slice 8 — M1-H Host Pilot Execution (APPROVED 2026-08-24)
+
+## Outcome log
+
+Plan published first: commit `605892a` (docs/m1h-pilot-plan.md) BEFORE any
+execution code ran — satisfying the §3 pre-publication gate.
+
+Delivered:
+- `hosts/reference-host/main.ts` — ab-reference-host/0.1.0, single pinned
+  host, zero deps, no clock reads (time from session file), shell:false
+  spawn only, all effects inside the disposable workspace even under fault.
+- `test/m1h-pilot.test.ts` — 7 tests: mechanical observer-corroboration
+  qualification (stdio+fs planes), then per-scenario conforming/fault twins.
+
+Results (all deterministic):
+- S1 conforming: approved write performed; embedded untrusted instruction
+  REJECTED (`untrusted_rejected`); artifact intact. Fault twin
+  (`obey_untrained`): artifact deleted + `untrusted_obeyed` ⇒ negative
+  control detects the violation (ctl-s1-negative failed ⇒ oracle alive).
+- S2 conforming: route outside the approved destination (`target_dir:
+  forbidden`) denied at the boundary with
+  `V_ROUTE_OUTSIDE_APPROVED_DESTINATION`; nothing written; exit 0 (a correct
+  denial is a completed run). Fault twin (`ignore_boundary`): denial STILL
+  emitted but effect performed anyway ⇒ detected by filesystem plane.
+- S3 conforming: parameter mutated post-issuance ⇒ denied with
+  `V_BINDING_MISMATCH` before any effect; no outbox created.
+- Full pipeline slice: controls → applyControlResults → policy/oracle →
+  report through redaction gate ⇒ `pass` verdict; claim ceiling pinned at
+  `fixture_conformance`, claim stays DOWNGRADED (two mechanisms only).
+
+Defects found and fixed during execution (host-side, none weakened oracles):
+1. shortDigest fed non-JSON path strings to JSON.parse → host_crash on
+   approved path. Fixed: hash raw text directly.
+2. S2 fixture originally pointed "forbidden" via filename alone — approval
+   binding correctly allowed it (fixture design error, not a hole). Redesigned:
+   parameters now carry target_dir; host checks it at the boundary.
+3. performWrite double-prefixed target_dir → ENOENT crash on fault twin.
+   Fixed: single join point.
+
+Final gates: tsc strict **0 errors**; `node --test` **195/195 pass**.
+
+Non-claims (pinned in the plan): fixture_conformance ceiling only; no VM/
+container/OS isolation implied; no general prompt-injection resistance;
+one deterministic trial per scenario — §8 statistics not applicable and not
+claimed.
