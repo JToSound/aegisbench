@@ -1073,3 +1073,29 @@ a one-line edit.
 
 No remote creation, no push, no tags, no branch strategy beyond main; no
 release automation. M1-H remains separately gated.
+
+## Outcome log (2026-08-24)
+
+- `pnpm install`: typescript 5.9.3 + @types/node 22.20.1; pnpm-lock.yaml
+  created and committed; node_modules ignored.
+- tsc strict gate: FIRST full run surfaced 27 type-level errors across 11
+  files (runtime behavior was already correct — all 188 tests green
+  throughout). ALL fixed without weakening any strict flag:
+  JsonValue re-exported from canon.ts (was import-only, breaking re-imports);
+  CanonError decoupled from StrictJsonError (own code union);
+  EventView mutable fields un-`readonly` (assigned after literal creation);
+  controls.ts loop element undefined-guard;
+  observers.ts narrowed via explicit `: JsonValue` annotations + local
+  narrowing (exactOptionalPropertyTypes);
+  verify.ts conditional spread for optional runValidity;
+  test files: removed `runValidity: undefined` literals in favor of rest-
+  spread omission; safe double-cast for redaction failure record.
+- Post-fix verification: `tsc -p tsconfig.json` → **0 errors**;
+  `node --test` → 188/188 pass.
+- Baseline commit created on main: **0efaa42** ("chore: baseline freeze —
+  M0+M1 complete"), 49 files tracked, working tree clean. Identity used:
+  JToSound <JToSound@users.noreply.github.com> (commit-local -c config).
+- MASTER_PROMPT.md committed verbatim as received (git warned CRLF→LF
+  normalization on future touch — expected under .gitattributes policy).
+
+Remaining owner-gated: push/remote creation; M1-H host pilot.
