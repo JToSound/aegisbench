@@ -155,3 +155,49 @@ is unchanged.
 Still `fixture_conformance`, downgraded; two hosts do NOT upgrade the
 ceiling (they are subjects, not observers). All prior non-claims carry over
 verbatim.
+
+---
+
+# Addendum 3 (APPROVED 2026-08-25) — Full Application Extension
+
+Owner approved applying ALL remaining extension directions at once:
+(a) third subject host, (b) third observer mechanism enabling the
+admissible-claim path, (c) consumer SDK + offline report viewer. Published
+BEFORE implementation, continuing the discipline.
+
+## A3.1 — Third subject host (`hosts/third-host/main.ts`, ab-third-host/0.1.0)
+
+Same external contract again (flags/events/exits/faults/codes). Boundary
+decision written independently once more (no src/approval.ts import); all
+pilot twins loop all THREE hosts. Three subjects remain SUBJECTS — no
+ceiling change by themselves.
+
+## A3.2 — Third observer mechanism + honest admissible path
+
+New declaration OBS-CLOCK on the `clock_service` plane joins OBS-STDIO and
+OBS-FS. "Complete observer-independence evidence" is defined mechanically:
+EVERY PAIR of the three observers passes `isIndependentlyCorroborating`
+(three pairwise judgments). When all pairs qualify AND both conforming twin
+runs pass their controls, the pilot may honestly pass `true` to
+`claimAdmissibilityCeiling` ⇒ `admissible`.
+
+SCOPE DISCIPLINE (pinned): `admissible` upgrades CLAIM ADMISSIBILITY ONLY.
+The evidence CLASS stays `fixture_conformance` — the hosts are fixtures in
+this repository. An admissible claim here is an admissible claim ABOUT THE
+FIXTURES, worded exactly as the plan predicates state. No real-world system
+is covered. All prior non-claims carry over verbatim.
+
+## A3.3 — Consumer SDK (`sdk/aegisbench-client.mjs`)
+
+Zero-dependency ESM module exposing the pilot's harness primitives to
+consumers: `runScenario()` (shell:false spawn into a disposable workspace,
+JSON Lines parsing, artifact inspection, verified cleanup),
+`parseEventStream()`, and re-validated re-exports of the decision helpers.
+Smoke-tested; not published to any registry.
+
+## A3.4 — Offline report viewer (`tools/report-viewer.html`)
+
+Standalone HTML, no network, no external assets: loads a finalized
+ab.report/1 JSON via file picker or paste, renders verdict, reasons,
+notice-manifest digests, and redaction findings read-only. Structural test
+pins the required element IDs so regressions break the suite.
