@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<!--
+  AegisBench Offline Report Viewer (docs/m1h-pilot-plan.md Addendum 3 §A3.4).
+  Standalone: no network, no external assets, read-only rendering of a
+  finalized ab.report/1 document. Load via file picker or paste.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>AegisBench Report Viewer</title>
+<style>
+  :root { color-scheme: dark; }
+  body {
+    font-family: "Cascadia Code", ui-monospace, Consolas, monospace;
+    margin: 0;
+    padding: 24px;
+    background: var(--card, #16181d);
+    color: var(--foreground, #e6e6e6);
+    line-height: 1.5;
+  }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  .muted { color: var(--muted-foreground, #9aa0a6); font-size: 12px; }
+  .panel {
+    border: 1px solid var(--border, #2a2d33);
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 16px;
+  }
+  textarea {
+    width: 100%;
+    min-height: 140px;
+    background: transparent;
+    color: inherit;
+    border: 1px solid var(--border, #2a2d33);
+    border-radius: 6px;
+    font: inherit;
+    box-sizing: border-box;
+  }
+  button {
+    font: inherit;
+    border: 1px solid var(--border, #2a2d33);
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    padding: 6px 14px;
+    cursor: pointer;
+  }
+  button:hover { border-color: var(--accent, #7aa2f7); }
+  input[type=file] { display: none; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  td, th { text-align: left; padding: 4px 10px 4px 0; vertical-align: top; word-break: break-all; }
+  th { color: var(--muted-foreground, #9aa0a6); font-weight: normal; width: 220px; }
+  tr { border-top: 1px solid var(--border, #2a2d33); }
+  tr:first-child { border-top: none; }
+  .verdict-pass { color: #9ece6a; }
+  .verdict-fail { color: #f7768e; }
+  .verdict-other { color: #e0af68; }
+  .notice {
+    white-space: pre-wrap;
+    font-size: 12px;
+    color: var(--muted-foreground, #9aa0a6);
+    border-left: 3px solid var(--accent, #7aa2f7);
+    padding-left: 12px;
+    margin-top: 12px;
+  }
+  .error { color: #f7768e; }
+  code { font-size: 12px; }
+</style>
+</head>
+<body>
+<h1 id="viewer-title">AegisBench Report Viewer</h1>
+<div class="muted" id="viewer-subtitle">Offline · read-only · ab.report/1 — nothing leaves this window.</div>
+
+<div class="panel" id="load-panel">
+  <button id="btn-pick-file" type="button">Open report JSON…</button>
+  <input type="file" id="file-input" accept=".json,application/json">
+  <span class="muted"> or paste below and press Render.</span>
+  <textarea id="paste-area" spellcheck="false" placeholder='{"$schema":"ab.report/1", …}'></textarea>
+  <div style="margin-top:8px;">
+    <button id="btn-render" type="button">Render pasted JSON</button>
+  </div>
+  <div class="error" id="load-error" role="alert"></div>
+</div>
+
+<div id="report-root"></div>
+
+<script>
+"use strict";
+(function () {
+  var report = null;
+
+  function el(id) { return document.getElementById(id); }
+
+  function showError(msg) { el("load-error").textContent = msg || ""; }
+
+  function tryParse(text) {
+    var doc;
+    try { doc = JSON.parse(text); } catch (e) { return null; }
+    if (!doc || typeof doc !== "object" || Array.isArray(doc)) return null;
+    return doc;
+  }
+
+  function verdictClass(v) {
+    return v === "pass" ? "verdict-pass" : (v === "fail" ? "verdict-fail" : "verdict-other");
+  }
+
+  function row(key, valueHtml) {
+    return "<tr><th>" + esc(key) + "</th><td>" + valueHtml + "</td></tr>";
+  }
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function render(doc) {
+    // Structural gate: only render what identifies as an AB report.
+    var schema = doc && doc["$schema"];
+    if (typeof schema !== "string" || schema.indexOf("ab.report/") !== 0) {
+      showError('Not an ab.report/* document ($schema="' + String(schema) + '").');
+      return false;
+    }
+    showError("");
+
+    report = doc;
+    var out = "";
+    out += '<div class="panel"><table>';
+    out += row("$schema", '<code>' + esc(schema) + '</code>');
+    out += row("report_id", '<code>' + esc(doc["report_id"] ?? "(missing)") + '</code>');
+    out += row("scenario_id", esc(doc["scenario_id"] ?? "(missing)"));
+    var v = doc["verdict"] !== undefined ? doc["verdict"] : doc["scenario_verdict"];
+    out += row("verdict", '<span class="' + verdictClass(v) + '">' + esc(v ?? "(missing)") + "</span>");
+    out += row("run_validity", esc(doc["run_validity"] === undefined ? "(absent — not_run)" : doc["run_validity"]));
+    out += row("aggregation_rule", '<code>' + esc(doc["aggregation_rule"] ?? "") + '</code>');
+    out += "</table></div>";
+
+    var reasons = Array.isArray(doc["reasons"]) ? doc["reasons"] : [];
+    out += '<div class="panel"><h1 style="font-size:14px;">Reasons (' + reasons.length + ")</h1>";
+    out += reasons.length
+      ? "<ul>" + reasons.map(function (r) { return "<li>" + esc(r) + "</li>"; }).join("") + "</ul>"
+      : '<span class="muted">none recorded</span>';
+    out += "</div>";
+
+    var m = doc["notice_manifest"];
+    if (m && typeof m === "object") {
+      out += '<div class="panel"><h1 style="font-size:14px;">Assurance notice manifest</h1><table>';
+      Object.keys(m).forEach(function (k) {
+        out += row(k, k.indexOf("digest") >= 0 || k.indexOf("sha") >= 0
+          ? '<code>' + esc(m[k]) + "</code>"
+          : esc(m[k]));
+      });
+      out += "</table>";
+      if (typeof m["notice_text"] === "string") {
+        out += '<div class="notice">' + esc(m["notice_text"]) + "</div>";
+      }
+      out += "</div>";
+    }
+
+    if (doc["notes"]) {
+      out += '<div class="panel"><h1 style="font-size:14px;">Notes</h1>' + esc(doc["notes"]) + "</div>";
+    }
+
+    el("report-root").innerHTML = out;
+    return true;
+  }
+
+  el("btn-render").addEventListener("click", function () {
+    var doc = tryParse(el("paste-area").value);
+    if (!doc) { showError("Pasted text is not valid JSON."); return; }
+    if (!render(doc)) return;
+  });
+
+  el("btn-pick-file").addEventListener("click", function () { el("file-input").click(); });
+
+  el("file-input").addEventListener("change", function () {
+    var f = this.files && this.files[0];
+    if (!f) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      var doc = tryParse(String(reader.result));
+      if (!doc) { showError(f.name + " is not valid JSON."); return; }
+      if (!render(doc)) return;
+      el("viewer-subtitle").textContent = f.name + " · offline · read-only";
+    };
+    reader.readAsText(f);
+  });
+
+  // Expose for the structural test only.
+  window.__abViewer = { render: render };
+})();
+</script>
+</body>
+</html>

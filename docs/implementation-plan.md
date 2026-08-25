@@ -1206,3 +1206,43 @@ claimed.
 Ceilings unchanged: still `fixture_conformance`, downgraded — a second host
 is a second SUBJECT, not an observer; subject diversity does not upgrade
 claim admissibility.
+
+---
+
+# Slice 10 Outcome Log (2026-08-25) — Full Application Extension
+
+Addendum 3 published first: commit `0f2c7e8`, BEFORE any implementation.
+
+Delivered:
+- A3.1 `hosts/third-host/main.ts` (ab-third-host/0.1.0): third independent
+  subject — single-framed-buffer digest layout, fixed-step hex comparison;
+  same external contract, no src/approval.ts import.
+- A3.2 Three observers on distinct planes (`process_ipc`, `filesystem`,
+  `clock_service`); "complete independence evidence" pinned as EVERY PAIR
+  passing `isIndependentlyCorroborating` (`test/pilot-helpers.ts`
+  all-pairs helper). Pilot may now honestly pass `true` to
+  `claimAdmissibilityCeiling` ⇒ **admissible** — scope discipline pinned:
+  admissible ABOUT THE FIXTURES ONLY; evidence class stays
+  `fixture_conformance`; all non-claims carry over.
+- A3.3 `sdk/aegisbench-client.mjs` + `.d.mts`: zero-dep consumer SDK
+  (runScenario with verified cleanup, parseEventStream with numbered
+  errors, re-exported decision helpers). Not published to any registry.
+- A3.4 `tools/report-viewer.html`: standalone offline viewer (file picker /
+  paste), structural test pins required element IDs and offline-safety
+  (no external URLs/scripts/imports).
+- Test refactor: shared pilot fixtures moved to `test/pilot-helpers.ts`;
+  twin loops now run all THREE hosts.
+
+Verification:
+- Full suite 205/205 pass; tsc strict 0 errors; CI green after push.
+- Viewer exercised END-TO-END beyond the structural pin: a real finalized
+  report from the CLI was rendered through the extracted inline script in a
+  DOM-less harness ⇒ verdict visible, AB-NOTICE-001 manifest visible.
+  This probe caught a REAL bug pre-commit: the renderer read a nonexistent
+  `scenario_verdict` field (actual field: `verdict`) and would have shown
+  "(missing)" for every real report — fixed to read `verdict` with legacy
+  fallback, then re-verified YES/YES.
+- Probe-harness lesson recorded: per-call fake-element proxies break
+  write/read identity; cache instances by id.
+
+Remaining: none pending owner action; future extensions by direction only.
