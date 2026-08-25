@@ -106,3 +106,52 @@ resistance; no production readiness.
 Second host, extensions, SDKs, web viewers, remote MCP, real accounts or
 browser profiles, signature chains, statistical trials (each scenario is ONE
 deterministic trial; §8 bounds do not apply and are not claimed).
+
+---
+
+# Addendum (APPROVED 2026-08-24) — Second Host Extension
+
+Owner selected (a)+(b): visibility flip to PUBLIC (done separately, not part
+of this repo's contents) plus a SECOND synthetic host exercising the same
+pilot contract. This addendum is PUBLISHED BEFORE the second host's
+execution code, continuing the §3 pre-publication discipline.
+
+## What the second host is for
+
+The pilot proved the harness observes/decides/reports ONE fixture host. A
+second, independently-written host that passes the SAME scenario twins with
+only the executable path changed demonstrates the harness measures the
+CONTRACT, not one implementation's quirks. Hosts are SUBJECTS here — subject
+diversity says nothing about observer independence, and no stronger claim
+ceiling results.
+
+## Pinned design — ab-alt-host/0.1.0 (`hosts/alt-host/main.ts`)
+
+- IDENTICAL external contract to the reference host: same CLI flags, same
+  JSON Lines event vocabulary (`run_started`, `effect_performed`,
+  `boundary_denied`, `untrusted_rejected`, `untrusted_obeyed`,
+  `run_completed`), same exit semantics (0 on completed incl. denials),
+  same fault mode names, same codes for the pilot's named denials
+  (`V_BINDING_MISMATCH`, `V_ROUTE_OUTSIDE_APPROVED_DESTINATION`).
+- DIFFERENT internals (the point): the effect-boundary decision is
+  implemented INDEPENDENTLY — no import of `src/approval.ts`. It rechecks
+  action type, destination identity, time window (string-compared ISO UTC),
+  and the parameter binding by RECOMPUTING the published domain-separated
+  SHA-256 layout (`AB-JCS-1 ‖ u32be(label) ‖ label ‖ u32be(len) ‖ payload`,
+  label `canonical_payload`) straight over node:crypto. Shared imports are
+  limited to infrastructure (strict parser, canonicalizer).
+- Same containment: shell:false spawn, effects confined to the disposable
+  workspace even under fault, no clock reads, no network.
+
+## Test integration
+
+The five scenario-twin tests parameterize over BOTH hosts
+(reference, alt): 5 × 2 = 10 execution tests + observer qualification +
+pipeline slice = 12 pilot tests total. A failure on EITHER host fails the
+suite; the oracle set is unchanged.
+
+## Claim ceilings (unchanged)
+
+Still `fixture_conformance`, downgraded; two hosts do NOT upgrade the
+ceiling (they are subjects, not observers). All prior non-claims carry over
+verbatim.
