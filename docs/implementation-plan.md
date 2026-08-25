@@ -1175,3 +1175,34 @@ Non-claims (pinned in the plan): fixture_conformance ceiling only; no VM/
 container/OS isolation implied; no general prompt-injection resistance;
 one deterministic trial per scenario — §8 statistics not applicable and not
 claimed.
+
+---
+
+# Slice 9 — Public Flip + Second Host (APPROVED 2026-08-24)
+
+## Outcome log
+
+- Visibility flipped to PUBLIC via `gh repo edit` and verified
+  (`{"visibility":"PUBLIC"}`); CI remains green on main.
+- Second-host addendum published BEFORE implementation (commit `90b94bb`),
+  then implemented:
+  - `hosts/alt-host/main.ts` — ab-alt-host/0.1.0. Same external contract
+    (flags, events, exit semantics, fault modes, denial codes); effect-
+    boundary decision written INDEPENDENTLY: no import of src/approval.ts —
+    recomputes the published domain-separated SHA-256 layout over
+    node:crypto with timingSafeEqual comparison, string-compared ISO UTC
+    window, collect-all-violations.
+  - Pilot tests now loop both hosts on every scenario-twin case; each
+    assertion names the host under test.
+- Results: BOTH hosts pass all scenario twins identically (S1 conform/
+  fault, S2 conform/fault, S3 conform) — the harness measures the contract,
+  not one implementation's quirks. Full suite 195/195; tsc strict 0 errors;
+  CI green after push.
+- Documentation correction made honestly during this slice: the addendum's
+  initial "12 pilot tests total" wording did not match the implemented
+  shape (5 cases × 2 hosts in-loop = ten executions + observer +
+  pipeline); wording fixed to describe the actual structure.
+
+Ceilings unchanged: still `fixture_conformance`, downgraded — a second host
+is a second SUBJECT, not an observer; subject diversity does not upgrade
+claim admissibility.

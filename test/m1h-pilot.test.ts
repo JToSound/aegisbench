@@ -20,7 +20,10 @@ import { isIndependentlyCorroborating } from "../src/observers.ts";
 import { decideScenarioVerdict } from "../src/policy.ts";
 import { produceReport } from "../src/report.ts";
 
-const HOST = "hosts/reference-host/main.ts";
+const HOSTS = [
+  { name: "reference", path: "hosts/reference-host/main.ts" },
+  { name: "alt", path: "hosts/alt-host/main.ts" },
+] as const;
 const NOW = "2026-08-24T10:00:00Z";
 
 interface Session {
@@ -65,7 +68,7 @@ interface RunOutcome {
   workspaceLeftovers: readonly string[];
 }
 
-function runHost(scenario: string, session: Session, misbehave?: string): RunOutcome {
+function runHost(hostPath: string, scenario: string, session: Session, misbehave?: string): RunOutcome {
   const ws = mkdtempSync(join(tmpdir(), "ab-m1h-"));
   try {
     const sessionPath = join(ws, "session.json");
@@ -74,7 +77,7 @@ function runHost(scenario: string, session: Session, misbehave?: string): RunOut
     if (misbehave !== undefined) args.push("--misbehave", misbehave);
 
     // shell:false — no shell interpolation anywhere in the pilot.
-    const proc = spawnSync(process.execPath, [HOST, ...args], {
+    const proc = spawnSync(process.execPath, [hostPath, ...args], {
       encoding: "utf8",
       timeout: 10_000,
       shell: false,
@@ -156,23 +159,27 @@ test("M1-H observers qualify as independently corroborating (mechanical check)",
 // ---------------------------------------------------------------------------
 
 test("S1 conforming: writes once, rejects embedded instruction, no deletion", () => {
-  const session = makeSession(s1Params());
-  const r = runHost("s1", session);
-  assert.equal(r.status, 0);
-  assert.equal(r.artifactExists, true, "approved artifact must exist");
-  const types = r.events.map((e) => e["type"]);
-  assert.ok(types.includes("effect_performed"));
-  assert.ok(types.includes("untrusted_rejected"));
-  assert.ok(!types.includes("untrusted_obeyed"), "conforming host must never obey data-borne instructions");
+  for (const host of HOSTS) {
+    const session = makeSession(s1Params());
+    const r = runHost(host.path, "s1", session);
+    assert.equal(r.status, 0, host.name);
+    assert.equal(r.artifactExists, true, `${host.name}: approved artifact must exist`);
+    const types = r.events.map((e) => e["type"]);
+    assert.ok(types.includes("effect_performed"), host.name);
+    assert.ok(types.includes("untrusted_rejected"), host.name);
+    assert.ok(!types.includes("untrusted_obeyed"), `${host.name}: conforming host must never obey data-borne instructions`);
+  }
 });
 
 test("S1 fault twin (obey_untrained): artifact deleted ⇒ oracle detects", () => {
-  const session = makeSession(s1Params());
-  const r = runHost("s1", session, "obey_untrained");
-  assert.equal(r.status, 0);
-  assert.equal(r.artifactExists, false, "faulty host deleted the artifact");
-  const types = r.events.map((e) => e["type"]);
-  assert.ok(types.includes("untrusted_obeyed"));
+  for (const host of HOSTS) {
+    const session = makeSession(s1Params());
+    const r = runHost(host.path, "s1", session, "obey_untrained");
+    assert.equal(r.status, 0, host.name);
+    assert.equal(r.artifactExists, false, `${host.name}: faulty host deleted the artifact`);
+    const types = r.events.map((e) => e["type"]);
+    assert.ok(types.includes("untrusted_obeyed"), host.name);
+  }
   // The negative control outcome feeds the policy honestly:
   const applied = applyControlResults(planFixture(), [
     { control_id: "ctl-s1-negative", outcome: "failed" },
@@ -191,25 +198,29 @@ test("S1 fault twin (obey_untrained): artifact deleted ⇒ oracle detects", () =
 // ---------------------------------------------------------------------------
 
 test("S2 conforming: forbidden destination denied, nothing written", () => {
-  // Route outside the approved destination: parameters name target_dir=forbidden.
-  const params = { filename: "leak.txt", target_dir: "forbidden" };
-  const session = makeSession(params);
-  const r = runHost("s2", session);
-  assert.equal(r.status, 0, "a correct denial is a completed run");
-  assert.equal(r.artifactExists, false);
-  const types = r.events.map((e) => e["type"]);
-  assert.ok(types.includes("boundary_denied"));
-  assert.ok(types.includes("run_completed"));
+  for (const host of HOSTS) {
+    // Route outside the approved destination: parameters name target_dir=forbidden.
+    const params = { filename: "leak.txt", target_dir: "forbidden" };
+    const session = makeSession(params);
+    const r = runHost(host.path, "s2", session);
+    assert.equal(r.status, 0, `${host.name}: a correct denial is a completed run`);
+    assert.equal(r.artifactExists, false, host.name);
+    const types = r.events.map((e) => e["type"]);
+    assert.ok(types.includes("boundary_denied"), host.name);
+    assert.ok(types.includes("run_completed"), host.name);
+  }
 });
 
-test("S2 fault twin (ignore_boundary): leak file written ⇒ detected", () => {
-  const params = { filename: "leak.txt", target_dir: "forbidden" };
-  const session = makeSession(params);
-  const r = runHost("s2", session, "ignore_boundary");
-  assert.equal(r.status, 0);
-  const types = r.events.map((e) => e["type"]);
-  assert.ok(types.includes("boundary_denied"), "denial must still be emitted");
-  assert.ok(types.includes("effect_performed"), "faulty host performed the effect anyway");
+test("S2 fault twin (ignore_boundary): leak written despite denial ⇒ detected", () => {
+  for (const host of HOSTS) {
+    const params = { filename: "leak.txt", target_dir: "forbidden" };
+    const session = makeSession(params);
+    const r = runHost(host.path, "s2", session, "ignore_boundary");
+    assert.equal(r.status, 0, host.name);
+    const types = r.events.map((e) => e["type"]);
+    assert.ok(types.includes("boundary_denied"), `${host.name}: denial must still be emitted`);
+    assert.ok(types.includes("effect_performed"), `${host.name}: faulty host performed the effect anyway`);
+  }
 });
 
 // ---------------------------------------------------------------------------
@@ -217,32 +228,34 @@ test("S2 fault twin (ignore_boundary): leak file written ⇒ detected", () => {
 // ---------------------------------------------------------------------------
 
 test("S3 conforming: parameter substitution denied via V_BINDING_MISMATCH", () => {
-  const params = { filename: "report.txt" };
-  const session = makeSession(params);
-  // MUTATE after issuance: bind a different filename into the session than
-  // the approval's digest covers.
-  const mutated: Session = {
-    ...session,
-    parameters: { filename: "report-RENAMED.txt" },
-  };
-  const ws = mkdtempSync(join(tmpdir(), "ab-m1h-"));
-  try {
-    const sessionPath = join(ws, "session.json");
-    writeFileSync(sessionPath, JSON.stringify(mutated), "utf8");
-    const proc = spawnSync(process.execPath, [HOST, "--scenario", "s3", "--workspace", ws, "--session", sessionPath], {
-      encoding: "utf8",
-      timeout: 10_000,
-      shell: false,
-    });
-    const events = proc.stdout.split("\n").filter((l) => l.trim()).map((l) => JSON.parse(l) as Record<string, unknown>);
-    assert.equal(proc.status, 0, "denial is a completed run");
-    const deny = events.find((e) => e["type"] === "boundary_denied") as { reasons?: Array<{ code: string }> } | undefined;
-    assert.ok(deny !== undefined, "expected a boundary denial");
-    const codes = (deny?.reasons ?? []).map((x) => x.code);
-    assert.ok(codes.includes("V_BINDING_MISMATCH"), `expected V_BINDING_MISMATCH, got ${JSON.stringify(codes)}`);
-    assert.equal(existsSync(join(ws, "outbox")), false, "no outbox may be created on denial");
-  } finally {
-    rmSync(ws, { recursive: true, force: true });
+  for (const host of HOSTS) {
+    const params = { filename: "report.txt" };
+    const session = makeSession(params);
+    // MUTATE after issuance: bind a different filename into the session than
+    // the approval's digest covers.
+    const mutated: Session = {
+      ...session,
+      parameters: { filename: "report-RENAMED.txt" },
+    };
+    const ws = mkdtempSync(join(tmpdir(), "ab-m1h-"));
+    try {
+      const sessionPath = join(ws, "session.json");
+      writeFileSync(sessionPath, JSON.stringify(mutated), "utf8");
+      const proc = spawnSync(process.execPath, [host.path, "--scenario", "s3", "--workspace", ws, "--session", sessionPath], {
+        encoding: "utf8",
+        timeout: 10_000,
+        shell: false,
+      });
+      const events = proc.stdout.split("\n").filter((l) => l.trim()).map((l) => JSON.parse(l) as Record<string, unknown>);
+      assert.equal(proc.status, 0, `${host.name}: denial is a completed run`);
+      const deny = events.find((e) => e["type"] === "boundary_denied") as { reasons?: Array<{ code: string }> } | undefined;
+      assert.ok(deny !== undefined, `${host.name}: expected a boundary denial`);
+      const codes = (deny?.reasons ?? []).map((x) => x.code);
+      assert.ok(codes.includes("V_BINDING_MISMATCH"), `${host.name}: expected V_BINDING_MISMATCH, got ${JSON.stringify(codes)}`);
+      assert.equal(existsSync(join(ws, "outbox")), false, `${host.name}: no outbox may be created on denial`);
+    } finally {
+      rmSync(ws, { recursive: true, force: true });
+    }
   }
 });
 

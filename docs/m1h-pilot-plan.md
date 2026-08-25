@@ -145,10 +145,10 @@ ceiling results.
 
 ## Test integration
 
-The five scenario-twin tests parameterize over BOTH hosts
-(reference, alt): 5 × 2 = 10 execution tests + observer qualification +
-pipeline slice = 12 pilot tests total. A failure on EITHER host fails the
-suite; the oracle set is unchanged.
+The five scenario-twin cases each run against BOTH hosts (reference, alt)
+inside one loop — ten host executions per suite run; every assertion names
+the host under test. A failure on EITHER host fails the case; the oracle set
+is unchanged.
 
 ## Claim ceilings (unchanged)
 
