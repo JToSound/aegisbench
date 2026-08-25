@@ -80,4 +80,8 @@ audit trail.
 
 ## License
 
-Not yet chosen — pending owner decision. All rights reserved until then.
+[MIT](LICENSE) — © 2026 JToSound. The governing technical contract
+([`MASTER_PROMPT.md`](MASTER_PROMPT.md)) and the assurance notices embedded
+in artifacts remain authoritative for any claims made with this system;
+the license grants no rights to present fixture-scoped results as
+real-world guarantees.
